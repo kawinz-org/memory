@@ -1,0 +1,32 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+    
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    name: Build Docker Image
+    steps:
+
+      - name: Fetch Sources
+        uses: actions/checkout@v2
+
+      - name: Login to GitHub Container Registry
+        env:
+          DOCKER_USERNAME: kawinz-org
+          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: echo $DOCKER_PASSWORD | docker login ghcr.io --username mommde --password-stdin
+
+      - name: Build & Tag
+        run: docker build -t ghcr.io/kawinz-org/memory:latest -t ghcr.io/kawinz-org/memory:"$GITHUB_SHA" .
+
+      - name: Push Image to GitHub Container Registry
+        run: docker push ghcr.io/kawinz-org/memory:latest
+
+      - name: Push Specific Image to GitHub Container Registry
+        run: docker push ghcr.io/kawinz-org/memory:"$GITHUB_SHA"
